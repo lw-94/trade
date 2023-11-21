@@ -1,0 +1,43 @@
+# 忽略 Python 编译字节码文件
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# 忽略 IDE 和编辑器生成的文件和文件夹
+.idea/
+*.suo
+*.ntvs*
+*.pydevproject
+*.bak
+*.swp
+
+#忽略db
+db/
+
+# 忽略日志文件
+*.log
+
+# 忽略缓存文件
+*.cache/
+
+# 忽略虚拟环境和依赖库文件夹
+venv/
+env/
+env.bak/
+env/
+
+# 忽略本地配置文件
+config.ini
+
+# 忽略敏感或私密信息
+secrets.txt
+
+# 忽略生成的文档或报告文件夹
+docs/
+
+# 忽略其他临时文件和垃圾文件
+*.tmp
+*.bak
+*.swp
+.DS_Store
