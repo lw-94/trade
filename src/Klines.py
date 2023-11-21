@@ -62,7 +62,7 @@ class Klines:
             "interval": interval,
             "startTime": start_time,
             "end_time": end_time,
-            "limit": 1000,  # 最大限制
+            "limit": 1500,  # 最大限制
         }
 
         response = session.get(f"{self.base_url}/fapi/v1/klines", params=params)
@@ -96,12 +96,18 @@ class Klines:
         return kline_df
 
     # 标记k线交易数据导入数据库
-    def get_and_data_save_to_db(self, start_time, interval="1m"):
+    def get_data_and_save_to_db(self, start_time, interval="1m"):
         """
         # 开始时间
         start_time
 
         """
+        print(
+            "拿1500条(一天1440条), 开始时间：",
+            datetime.datetime.fromtimestamp(start_time / 1000).strftime(
+                "%Y-%m-%d %H:%M:%S"
+            ),
+        )
         _data = self.get_kline(start_time=start_time, interval=interval)
         _data["symbol"] = self.symbol
         _data["timestamp_symbol"] = _data["timestamp"] + _data["symbol"]

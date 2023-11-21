@@ -49,13 +49,14 @@ class BackTestEngine:
         )
         self.trades_df = pd.concat([self.trades_df, __df])  # 记录成交
 
-    def create_trade_data_json(self, file_name="trade_data.json"):
+    def create_trade_data_json(self, file_name="../docs/trade_data.json"):
         json_str = self.trades_df.to_json(orient="records")
         with open(file_name, "w") as file:
             file.write(json_str)
 
     def create_bar_chart(self):
         self.trades_df.plot(x="datetime", y="profit", kind="bar")
+        plt.rcParams["font.family"] = "STHeiti"
         plt.title("profit chart")
         plt.xlabel("datetime")
         plt.ylabel("profit")
