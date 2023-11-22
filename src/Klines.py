@@ -7,9 +7,8 @@ import os
 
 
 class Klines:
-    def __init__(self, symbol="BTC"):
+    def __init__(self):
         self.table_name = "klines"
-        self.symbol = symbol + "USDT"
         # 币安API的基本URL
         self.base_url = "https://fapi.binance.com"
         # open db
@@ -43,6 +42,7 @@ class Klines:
         start_time,
         end_time=int(datetime.datetime.now().timestamp() * 1000),
         interval="1m",
+        symbol="BTCUSDT",
     ):
         """
         # 设置时间间隔（1分钟K线）
@@ -58,7 +58,7 @@ class Klines:
         kline_data_list = []
 
         params = {
-            "symbol": self.symbol,
+            "symbol": symbol,
             "interval": interval,
             "startTime": start_time,
             "end_time": end_time,
@@ -91,25 +91,26 @@ class Klines:
         )
         kline_df["timestamp"] = pd.to_datetime(kline_df["timestamp"], unit="ms")
         kline_df["timestamp"] = kline_df["timestamp"].astype(str)
-        kline_df["symbol"] = self.symbol
-        kline_df["timestamp_symbol"] = kline_df["timestamp"] + self.symbol
+        kline_df["symbol"] = symbol
+        kline_df["timestamp_symbol"] = kline_df["timestamp"] + symbol
         return kline_df
 
     # 标记k线交易数据导入数据库
-    def get_data_and_save_to_db(self, start_time, interval="1m"):
+    def get_data_and_save_to_db(self, start_time, interval="1m", symbol="BTCUSDT"):
         """
         # 开始时间
         start_time
 
         """
         print(
+            symbol,
             "拿1500条(一天1440条), 开始时间：",
             datetime.datetime.fromtimestamp(start_time / 1000).strftime(
                 "%Y-%m-%d %H:%M:%S"
             ),
         )
-        _data = self.get_kline(start_time=start_time, interval=interval)
-        _data["symbol"] = self.symbol
+        _data = self.get_kline(start_time=start_time, interval=interval, symbol=symbol)
+        _data["symbol"] = symbol
         _data["timestamp_symbol"] = _data["timestamp"] + _data["symbol"]
         cols = (
             "timestamp_symbol",
@@ -131,7 +132,7 @@ class Klines:
             f"""
             CREATE TABLE IF NOT EXISTS {self.table_name}(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            timestamp_symbol TEXT,
+            timestamp_symbol TEXT UNIQUE,
             timestamp INTEGER,
             symbol TEXT,
             open TEXT,
@@ -156,6 +157,9 @@ class Klines:
         self.conn.commit()
 
     # 获取数据库k线数据
-    def get_db_data(self):
-        _kline_data = pd.read_sql_query(f"SELECT * FROM {self.table_name}", self.conn)
+    def get_db_data(self, symbol="ALL"):
+        sql = f"SELECT * FROM {self.table_name}"
+        if symbol != "ALL":
+            sql += f" WHERE symbol='{symbol}'"
+        _kline_data = pd.read_sql_query(sql, self.conn)
         return _kline_data
