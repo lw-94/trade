@@ -16,8 +16,10 @@ def run(symbol="BTCUSDT"):
     # 执行策略
     bt_engine.s_sma169(symbol=symbol)
     # 产出
-    # bt_engine.create_trade_data_json()
-    bt_engine.trades_df.to_csv("docs/trade_data.csv")
+    bt_engine.create_trade_data_json(
+        symbol=symbol, file_name=f"docs/trade_data_{symbol}.json"
+    )
+    bt_engine.trades_df.to_csv(f"docs/trade_data_{symbol}.csv")
     bt_engine.create_bar_chart()
 
 

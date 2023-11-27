@@ -116,10 +116,11 @@ class BackTestEngine:
                 self.execute_order(symbol, datetime, vol, price, action)
 
     # output
-    def create_trade_data_json(self, file_name="docs/trade_data.json"):
+    def create_trade_data_json(self, symbol, file_name="docs/trade_data.json"):
         json_str = self.trades_df.to_json(orient="records")
+        str = '{"' + symbol[:-4] + '": ' + json_str + "}"
         with open(file_name, "w") as file:
-            file.write(json_str)
+            file.write(str)
 
     def create_bar_chart(self):
         symbol = self.trades_df.iloc[0, 1]
