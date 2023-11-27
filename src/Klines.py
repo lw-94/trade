@@ -8,6 +8,9 @@ import os
 
 class Klines:
     def __init__(self):
+        """
+        获取数据，数据入库
+        """
         self.table_name = "klines"
         # 币安API的基本URL
         self.base_url = "https://fapi.binance.com"

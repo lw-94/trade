@@ -1,6 +1,7 @@
 from decimal import Decimal
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib import font_manager
 from finta import TA
 
 
@@ -48,7 +49,7 @@ class BackTestEngine:
         else:  # 开仓
             self.open_fee = fee
             self.open_money = cost_abs
-            self.profit = Decimal(0)
+            self.profit = ""
 
         currency = symbol[:-4]
         action_map = {"close": "平仓", "long": "买入", "short": "卖出"}
@@ -121,13 +122,15 @@ class BackTestEngine:
             file.write(json_str)
 
     def create_bar_chart(self):
-        symbol = self.trades_df.iloc[0, 0]
+        symbol = self.trades_df.iloc[0, 1]
         ax = self.trades_df.plot(x="created_at", y="profit_total", kind="bar")
         ax.bar(self.trades_df["created_at"], self.trades_df["profit_total"], width=0.5)
-        plt.rcParams["font.family"] = "STHeiti"
-        plt.title(f"{symbol} chart")
-        plt.xlabel("created_at")
-        plt.ylabel("profit_total")
+        font_path = "/System/Library/Fonts/Supplemental/Songti.ttc"
+        font_prop = font_manager.FontProperties(fname=font_path)
+        plt.rcParams["font.family"] = font_prop.get_name()
+        plt.title(f"{symbol} 收益表", fontproperties=font_prop)
+        plt.xlabel("时间", fontproperties=font_prop)
+        plt.ylabel("总收益", fontproperties=font_prop)
         plt.xticks(rotation=60)
         plt.subplots_adjust(bottom=0.3)  # 调整底部边距
         plt.show()
