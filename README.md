@@ -2,10 +2,12 @@
 
 py trade
 
-# 获取kline data
+# 单币
 
-python3 ./src/getData.py
+## 获取kline data
 
-# 获取回测data
+python3 ./src/single/getData.py
 
-python3 ./src/trade.py
+## 获取回测data
+
+python3 ./src/single/trade.py
