@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import font_manager
 from finta import TA
+import utils
 
 
 class BackTestEngine:
@@ -14,7 +15,7 @@ class BackTestEngine:
         self.open_fee = 0  # 开仓交易费
         self.profit = 0  # 单次盈亏（比率）
         self.profit_total = 0  # 累计盈亏（比率）
-        self.trades_df = pd.DataFrame(
+        self.trades_df_origin = pd.DataFrame(  # 成交记录格式，便于重置数据
             columns=[
                 "created_at",
                 "currency",
@@ -26,7 +27,8 @@ class BackTestEngine:
                 "profit_total",
                 "mark",
             ]
-        )  # 成交记录
+        )
+        self.trades_df = self.trades_df_origin  # 记录成交记录
         self.data = None  # 历史价格数据
 
     def load_data(self, data):
@@ -53,40 +55,27 @@ class BackTestEngine:
 
         currency = symbol[:-4]
         action_map = {"close": "平仓", "long": "买入", "short": "卖出"}
-        __df = pd.DataFrame(
-            [
-                {
-                    "created_at": datetime,
-                    "currency": currency,
-                    "type_": action,
-                    "price": price,
-                    "quantity": abs(vol),
-                    "quantity_u": cost_abs,
-                    "profit": self.profit,
-                    "profit_total": float(self.profit_total),
-                    "mark": f"<{currency}>{action_map[action]}",
-                }
-            ]
-        )
-        self.trades_df = pd.concat([self.trades_df, __df])  # 记录成交
+        new_trade = {
+            "created_at": datetime,
+            "currency": currency,
+            "type_": action,
+            "price": price,
+            "quantity": abs(vol),
+            "quantity_u": cost_abs,
+            "profit": self.profit,
+            "profit_total": float(self.profit_total),
+            "mark": f"<{currency}>{action_map[action]}",
+        }
+        self.add_trade(new_trade)
+
+    def add_trade(self, data):
+        self.trades_df.loc[len(self.trades_df)] = data
 
     def clear_trades(self):
-        self.trades_df = pd.DataFrame(
-            columns=[
-                "symbol",
-                "datetime",
-                "action",
-                "cash",
-                "positions",
-                "vol",
-                "price",
-                "trade_fee",
-                "profit",
-            ]
-        )
+        self.trades_df = self.trades_df_origin
 
     # Strategy
-    def s_sma169(self, symbol, take_profit_ratio=1.01):
+    def s_sma169(self, pair, take_profit_ratio=1.01):
         # 大于sma169买入，小于sma169或者到达止盈点卖出
         _df = self.data
         _df["sma169"] = TA.SMA(_df, 169)
@@ -98,7 +87,7 @@ class BackTestEngine:
         for i, row in _df.iterrows():
             if i < 169 - 1:
                 continue
-            datetime = row["timestamp"]
+            datetime = row["open_time"]  # TODO:是否使用close_time更准确？
             price = float(row["close"])
             pre_price = float(row["pre_price"])
             sma169 = float(row["sma169"])
@@ -106,21 +95,24 @@ class BackTestEngine:
                 action = "long"
                 vol = 1
                 take_profit_price = price * take_profit_ratio
-                self.execute_order(symbol, datetime, vol, price, action)
+                self.execute_order(pair, datetime, vol, price, action)
             elif (
                 (pre_price < take_profit_price and price >= take_profit_price)
                 or (pre_price >= sma169 and price < sma169)
             ) and self.positions > 0:
                 action = "close"
                 vol = -1
-                self.execute_order(symbol, datetime, vol, price, action)
+                self.execute_order(pair, datetime, vol, price, action)
 
     # output
-    def create_trade_data_json(self, symbol, file_name="docs/trade_data.json"):
+    def create_trade_data_json(
+        self, pair, file_name="docs/trade_data.json", create_file=True
+    ):
         json_str = self.trades_df.to_json(orient="records")
-        str = '{"' + symbol[:-4] + '": ' + json_str + "}"
-        with open(file_name, "w") as file:
-            file.write(str)
+        if create_file:
+            str = '{"' + pair[:-4] + '": ' + json_str + "}"
+            utils.write_file(file_name, str)
+        return json_str
 
     def create_bar_chart(self):
         symbol = self.trades_df.iloc[0, 1]

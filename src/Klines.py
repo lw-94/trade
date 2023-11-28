@@ -78,13 +78,13 @@ class Klines:
         kline_df = pd.DataFrame(
             kline_data_list,
             columns=[
-                "timestamp",
+                "open_timestamp",
                 "open",
                 "high",
                 "low",
                 "close",
                 "volume",
-                "close_time",
+                "close_timestamp",
                 "quote_asset_volume",
                 "number_of_trades",
                 "taker_buy_base_asset_volume",
@@ -92,10 +92,14 @@ class Klines:
                 "ignore",
             ],
         )
-        kline_df["timestamp"] = pd.to_datetime(kline_df["timestamp"], unit="ms")
-        kline_df["timestamp"] = kline_df["timestamp"].astype(str)
-        kline_df["symbol"] = symbol
-        kline_df["timestamp_symbol"] = kline_df["timestamp"] + symbol
+        kline_df["open_time"] = pd.to_datetime(
+            kline_df["open_timestamp"], unit="ms"
+        ).astype(str)
+        kline_df["close_time"] = pd.to_datetime(
+            kline_df["close_timestamp"], unit="ms"
+        ).astype(str)
+        kline_df["open_time_symbol"] = kline_df["open_time"] + f" {symbol}"
+        kline_df["pair"] = symbol
         return kline_df
 
     # 标记k线交易数据导入数据库
@@ -113,18 +117,18 @@ class Klines:
             ),
         )
         _data = self.get_kline(start_time=start_time, interval=interval, symbol=symbol)
-        _data["symbol"] = symbol
-        _data["timestamp_symbol"] = _data["timestamp"] + _data["symbol"]
         cols = (
-            "timestamp_symbol",
-            "timestamp",
-            "symbol",
+            "open_time_symbol",
+            "open_time",
+            "open_timestamp",
+            "pair",
             "open",
             "high",
             "low",
             "close",
             "volume",
             "close_time",
+            "close_timestamp",
             "quote_asset_volume",
             "number_of_trades",
             "taker_buy_base_asset_volume",
@@ -135,15 +139,17 @@ class Klines:
             f"""
             CREATE TABLE IF NOT EXISTS {self.table_name}(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            timestamp_symbol TEXT UNIQUE,
-            timestamp INTEGER,
-            symbol TEXT,
+            open_time_symbol TEXT UNIQUE,
+            open_time TEXT,
+            open_timestamp INTEGER,
+            pair TEXT,
             open TEXT,
             high TEXT,
             low TEXT,
             close TEXT,
             volume TEXT,
-            close_time INTEGER,
+            close_time TEXT,
+            close_timestamp INTEGER,
             quote_asset_volume TEXT,
             number_of_trades INTEGER,
             taker_buy_base_asset_volume TEXT,
@@ -160,9 +166,21 @@ class Klines:
         self.conn.commit()
 
     # 获取数据库k线数据
-    def get_db_data(self, symbol="ALL"):
+    def get_db_data(self, pair="ALL", interval="1d"):
+        """
+        ### interval(获取多久的数据): '1d','3d','1w','1m','1y'
+        """
+        # now = datetime.datetime.now()
+        # time_map =  {
+        #     '1d': ,
+        #     '3d':,
+        #     '1w',
+        #     '1m',
+        #     '1y'
+        # }
+
         sql = f"SELECT * FROM {self.table_name}"
-        if symbol != "ALL":
-            sql += f" WHERE symbol='{symbol}'"
+        if pair != "ALL":
+            sql += f" WHERE pair='{pair}'"
         _kline_data = pd.read_sql_query(sql, self.conn)
         return _kline_data
