@@ -170,6 +170,8 @@ class Klines:
         """
         ### interval(获取多久的数据): '1d','3d','1w','1m','1y'
         """
+
+        # TODO: 获取数据的时间段，现为全部取出
         # now = datetime.datetime.now()
         # time_map =  {
         #     '1d': ,
