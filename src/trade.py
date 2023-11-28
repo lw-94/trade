@@ -15,7 +15,7 @@ def trade(pair="BTCUSDT"):
     bt_engine.s_sma169(pair=pair)
     # 产出
     bt_engine.create_trade_data_json(
-        pair=pair, file_name=f"docs/trade_data_{pair}.json"
+        pair=pair, file_path=f"docs/trade_data_{pair}.json"
     )
     bt_engine.trades_df.to_csv(f"docs/trade_data_{pair}.csv")
     bt_engine.create_bar_chart()

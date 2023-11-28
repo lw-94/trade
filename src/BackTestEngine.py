@@ -106,12 +106,12 @@ class BackTestEngine:
 
     # output
     def create_trade_data_json(
-        self, pair, file_name="docs/trade_data.json", create_file=True
+        self, pair, file_path="docs/trade_data.json", create_file=True
     ):
         json_str = self.trades_df.to_json(orient="records")
         if create_file:
             str = '{"' + pair[:-4] + '": ' + json_str + "}"
-            utils.write_file(file_name, str)
+            utils.write_file(file_path, str)
         return json_str
 
     def create_bar_chart(self):
