@@ -1,3 +1,5 @@
+import random
+import sys
 from Klines import Klines
 from BackTestEngine import BackTestEngine
 import utils
@@ -19,13 +21,24 @@ def trade(pair="BTCUSDT"):
     )
 
 
-content = "{"
-pairs = c_kline.get_pairs()[:10]
-for idx, pair in enumerate(pairs):
-    json = trade(pair)
-    content += f'"{pair[:-4]}":{json}'
-    if idx != len(pairs) - 1:  # not last pair
-        content += ","
-content += "}"
-utils.write_file("docs/trade_data_muti.json", content)
-print(f"{len(pairs)}个币数据")
+def create_with_num(num=10):
+    content = "{"
+    pairs = c_kline.get_pairs()
+    # 乱序，随机取num个
+    random.shuffle(pairs)
+    pairs = pairs[:num]
+    for idx, pair in enumerate(pairs):
+        json = trade(pair)
+        content += f'"{pair[:-4]}":{json}'
+        if idx != len(pairs) - 1:  # not last pair
+            content += ","
+    content += "}"
+    utils.write_file("docs/trade_data_muti.json", content)
+    print(f"{pairs}\n生成了{len(pairs)}个币对的交易json数据")
+
+
+if len(sys.argv) > 1:
+    num = int(sys.argv[1])
+    create_with_num(num)
+else:
+    create_with_num()

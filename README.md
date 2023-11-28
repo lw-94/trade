@@ -2,16 +2,14 @@
 
 py trade
 
-## 获取kline data
-
-### 获取单一
+## 获取单币k线数据(不加参数获取所有币k线数据)
 
 python ./src/getData.py BTC
 
-### 获取所有
+## 获取单币回测data(不加参数默认BTC)
 
-python ./src/getData.py
+python ./src/trade.py ETH
 
-## 获取单币回测data
+## 生成多币回测json(不加参数默认10个)
 
-python ./src/trade.py
+python ./src/tradeMuti.py 5

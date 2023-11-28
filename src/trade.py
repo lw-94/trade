@@ -1,3 +1,4 @@
+import sys
 from Klines import Klines
 from BackTestEngine import BackTestEngine
 
@@ -20,4 +21,8 @@ def trade(pair="BTCUSDT"):
     bt_engine.create_bar_chart()
 
 
-trade("BTCUSDT")
+if len(sys.argv) > 1:
+    pair = sys.argv[1] + "USDT"
+    trade(pair)
+else:
+    trade()
