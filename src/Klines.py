@@ -11,9 +11,10 @@ class Klines:
         """
         获取数据，数据入库
         """
-        self.table_name = "klines"
+        self.TABLE_NAME_KLINES = "klines"
+        self.TABLE_NAME_RATE_HISTORY = "rate_history"
         # 币安API的基本URL
-        self.base_url = "https://fapi.binance.com"
+        self.BASE_URL = "https://fapi.binance.com"
         # open db
         absolute_path = os.path.abspath("db/bn.db")
         print(absolute_path)
@@ -25,7 +26,7 @@ class Klines:
     @retry
     def get_pairs(self):
         session = requests.Session()
-        response = session.get(f"{self.base_url}/fapi/v1/exchangeInfo")
+        response = session.get(f"{self.BASE_URL}/fapi/v1/exchangeInfo")
         if response.status_code == 200:
             exchange_info = response.json()
 
@@ -38,6 +39,80 @@ class Klines:
         else:
             print(f"请求失败，状态码：{response.status_code}")
         return usdt_perpetual_pairs
+
+    # 获取资金费率数据
+    def get_funding_rate(
+        self,
+        start_time,
+        end_time=int(datetime.datetime.now().timestamp() * 1000),
+        symbol="BTCUSDT",
+    ):
+        session = requests.Session()
+        params = {
+            "symbol": symbol,
+            "startTime": start_time,
+            "end_time": end_time,
+            "limit": 1000,  # 最大限制
+        }
+
+        rate_list = []
+        response = session.get(f"{self.BASE_URL}/fapi/v1/fundingRate", params=params)
+        if response.status_code == 200:
+            rate_list = response.json()
+        else:
+            print(f"获取资金费率历史数据失败，状态码：{response.status_code}")
+        rate_df = pd.DataFrame(rate_list)
+        rate_df.rename(
+            columns={
+                "fundingTime": "timestamp",
+                "fundingRate": "rate",
+                "markPrice": "mark_price",
+            },
+            inplace=True,
+        )
+        rate_df["time"] = (
+            pd.to_datetime(rate_df["timestamp"], unit="ms").astype(str).str[:-4]
+        )
+        rate_df["time_symbol"] = rate_df["time"] + " " + rate_df["symbol"]
+        return rate_df
+
+    # 资金费率数据导入数据库
+    def get_funding_rate_and_save_to_db(
+        self,
+        start_time,
+        end_time=int(datetime.datetime.now().timestamp() * 1000),
+        symbol="BTCUSDT",
+    ):
+        _data = self.get_funding_rate(
+            start_time=start_time, end_time=end_time, symbol=symbol
+        )
+        cols = (
+            "time_symbol",
+            "symbol",
+            "time",
+            "timestamp",
+            "rate",
+            "mark_price",
+        )
+        self.cur.execute(
+            f"""
+            CREATE TABLE IF NOT EXISTS {self.TABLE_NAME_RATE_HISTORY}(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            time_symbol TEXT UNIQUE,
+            symbol TEXT,
+            time TEXT,
+            timestamp INTEGER,
+            rate TEXT,
+            mark_price TEXT)
+            """
+        )
+        self.conn.commit()
+        for x in _data.index:
+            data_list = str(tuple([_data.loc[x, _col] for _col in cols]))
+            self.cur.execute(
+                f"INSERT OR IGNORE INTO {self.TABLE_NAME_RATE_HISTORY} {str(cols)} VALUES {data_list}"
+            )
+        self.conn.commit()
 
     # 获取k线数据
     def get_kline(
@@ -68,7 +143,7 @@ class Klines:
             "limit": 1500,  # 最大限制
         }
 
-        response = session.get(f"{self.base_url}/fapi/v1/klines", params=params)
+        response = session.get(f"{self.BASE_URL}/fapi/v1/klines", params=params)
         if response.status_code == 200:
             kline_data_list = response.json()
         else:
@@ -102,7 +177,7 @@ class Klines:
         kline_df["pair"] = symbol
         return kline_df
 
-    # 标记k线交易数据导入数据库
+    # k线交易数据导入数据库
     def get_data_and_save_to_db(self, start_time, interval="1m", symbol="BTCUSDT"):
         """
         # 开始时间
@@ -137,7 +212,7 @@ class Klines:
         )
         self.cur.execute(
             f"""
-            CREATE TABLE IF NOT EXISTS {self.table_name}(
+            CREATE TABLE IF NOT EXISTS {self.TABLE_NAME_KLINES}(
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             open_time_symbol TEXT UNIQUE,
             open_time TEXT,
@@ -161,7 +236,7 @@ class Klines:
         for x in _data.index:
             data_list = str(tuple([_data.loc[x, _col] for _col in cols]))
             self.cur.execute(
-                f"INSERT OR IGNORE INTO {self.table_name} {str(cols)} VALUES {data_list}"
+                f"INSERT OR IGNORE INTO {self.TABLE_NAME_KLINES} {str(cols)} VALUES {data_list}"
             )
         self.conn.commit()
 
@@ -181,7 +256,7 @@ class Klines:
         #     '1y'
         # }
 
-        sql = f"SELECT * FROM {self.table_name}"
+        sql = f"SELECT * FROM {self.TABLE_NAME_KLINES}"
         if pair != "ALL":
             sql += f" WHERE pair='{pair}'"
         _kline_data = pd.read_sql_query(sql, self.conn)

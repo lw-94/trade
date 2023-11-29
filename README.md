@@ -2,9 +2,15 @@
 
 py trade
 
-## 获取单币k线数据(不加参数获取所有币k线数据)
+## 获取
 
-python ./src/getData.py BTC
+### 获取单币资金费率数据(不加参数获取所有币)
+
+python ./src/getFundingRate.py BTC
+
+### 获取单币k线数据(不加参数获取所有币k线数据)
+
+python ./src/getKline.py BTC
 
 ## 获取单币回测data(不加参数默认BTC)
 
