@@ -4,6 +4,9 @@ import pandas as pd
 import requests
 from retrying import retry
 import os
+from dateutil.relativedelta import relativedelta
+
+import utils
 
 
 class Klines:
@@ -241,23 +244,24 @@ class Klines:
         self.conn.commit()
 
     # 获取数据库k线数据
-    def get_db_data(self, pair="ALL", interval="1d"):
+    def get_db_data(self, pair="ALL", interval=""):
         """
-        ### interval(获取多久的数据): '1d','3d','1w','1m','1y'
+        ### interval(获取多久的数据): '1h','1d','3d','1w','1m','1y',''
+            ''则取全部
         """
-
-        # TODO: 获取数据的时间段，现为全部取出
-        # now = datetime.datetime.now()
-        # time_map =  {
-        #     '1d': ,
-        #     '3d':,
-        #     '1w',
-        #     '1m',
-        #     '1y'
-        # }
-
         sql = f"SELECT * FROM {self.TABLE_NAME_KLINES}"
         if pair != "ALL":
             sql += f" WHERE pair='{pair}'"
+        if interval != "":
+            # 获取数据的时间段
+            now = datetime.datetime.now().replace(second=0, microsecond=0)  # 精度到分钟
+            time_delta = utils.get_time_delta(interval=interval)
+            start_time = now - time_delta
+            start_time_UTC = utils.to_UTC(start_time)
+            print(f"从库中取{pair}的{start_time}及以后数据")
+            print("start_time_UTC", start_time_UTC)
+            # 库中存储时间均为UTC时间
+            sql += f"AND open_time>='{start_time_UTC}'"
+
         _kline_data = pd.read_sql_query(sql, self.conn)
         return _kline_data

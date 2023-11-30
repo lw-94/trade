@@ -4,18 +4,32 @@ py trade
 
 ## 获取
 
-### 获取单币资金费率数据(不加参数获取所有币)
+### 获取单币资金费率数据
 
+``` sh
+# symbol: BTC，ETH…… 默认获取所有币数据
 python ./src/getFundingRate.py BTC
+```
 
-### 获取单币k线数据(不加参数获取所有币k线数据)
+### 获取单币k线数据
 
+``` sh
+# symbol: BTC，ETH…… 默认获取所有币数据
 python ./src/getKline.py BTC
+```
 
-## 获取单币回测data(不加参数默认BTC)
+## 生成单币回测data
 
-python ./src/trade.py ETH
+``` sh
+# symbol: BTC，ETH…… 默认BTC
+# interval: xs，xh，xd，xw，xm，xy 默认全部时间
+python ./src/trade.py ETH 1d
+```
 
-## 生成多币回测json(不加参数默认10个)
+## 生成多币回测json
 
-python ./src/tradeMuti.py 5
+``` sh
+# count: 随机count个币的回测，默认10
+# interval: xs，xh，xd，xw，xm，xy 默认全部时间
+python ./src/tradeMuti.py 5 1d
+```

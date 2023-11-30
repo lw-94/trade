@@ -1,9 +1,10 @@
-from decimal import Decimal
+import utils
+
 import pandas as pd
+import pandas_ta as ta
 import matplotlib.pyplot as plt
 from matplotlib import font_manager
-from finta import TA
-import utils
+from decimal import Decimal
 
 
 class BackTestEngine:
@@ -29,7 +30,7 @@ class BackTestEngine:
             ]
         )
         self.trades_df = self.trades_df_origin  # 记录成交记录
-        self.data = None  # 历史价格数据
+        self.data: pd.DataFrame = None  # 历史价格数据
 
     def load_data(self, data):
         # 载入历史价格数据
@@ -78,9 +79,9 @@ class BackTestEngine:
     def s_sma169(self, pair, take_profit_ratio=1.01):
         # 大于sma169买入，小于sma169或者到达止盈点卖出
         _df = self.data
-        _df["sma169"] = TA.SMA(_df, 169)
+        # _df.ta.sma(169, append=True)
+        _df["sma169"] = ta.sma(_df["close"], 169)
         _df["pre_price"] = _df["close"].shift(1)
-
         take_profit_price = 0
         # stop_loss_price = 0
 

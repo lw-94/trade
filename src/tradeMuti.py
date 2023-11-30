@@ -7,8 +7,8 @@ import utils
 c_kline = Klines()
 
 
-def trade(pair="BTCUSDT"):
-    kline_data = c_kline.get_db_data(pair=pair)
+def trade(pair="BTCUSDT", interval=""):
+    kline_data = c_kline.get_db_data(pair=pair, interval=interval)
     # 源数据
     # kline_data.to_csv(f"{pair}-klines.csv")
     bt_engine = BackTestEngine()
@@ -21,14 +21,14 @@ def trade(pair="BTCUSDT"):
     )
 
 
-def create_with_num(num=10):
+def create_with_num(num=10, interval=""):
     content = "{"
     pairs = c_kline.get_pairs()
     # 乱序，随机取num个
     random.shuffle(pairs)
     pairs = pairs[:num]
     for idx, pair in enumerate(pairs):
-        json = trade(pair)
+        json = trade(pair, interval=interval)
         content += f'"{pair[:-4]}":{json}'
         if idx != len(pairs) - 1:  # not last pair
             content += ","
@@ -39,6 +39,9 @@ def create_with_num(num=10):
 
 if len(sys.argv) > 1:
     num = int(sys.argv[1])
-    create_with_num(num)
+    interval = ""
+    if len(sys.argv) > 2:
+        interval = sys.argv[2]
+    create_with_num(num=num, interval=interval)
 else:
     create_with_num()
