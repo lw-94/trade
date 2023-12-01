@@ -41,7 +41,7 @@ class BackTestEngine:
         ### action: 'long','short','close'
         """
         cost = Decimal(price) * Decimal(vol)
-        cost_abs = abs(Decimal(cost))
+        cost_abs = round(abs(Decimal(cost)), 1)
         fee = cost_abs * Decimal(self.fee_pro)  # 单次手续费
         self.positions = Decimal(self.positions) + Decimal(vol)
         if action == "close":
@@ -133,7 +133,7 @@ class BackTestEngine:
 
         _df["ema144"] = TA.EMA(_df, 144)
         _df["ema169"] = TA.EMA(_df, 169)
-        _df["pre_price"] = _df["close"].shift(15)  # 15min前
+        _df["pre_price"] = _df["close"].shift(3)  # 15min前
         take_profit_price = 0
         # stop_loss_price = 0
 
