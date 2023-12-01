@@ -13,7 +13,8 @@ def trade(pair="BTCUSDT", interval=""):
     bt_engine.load_data(kline_data)
     # 执行策略
     # TODO：策略也可加入命令行参数
-    bt_engine.s_sma169(pair=pair)
+    # bt_engine.s_sma169(pair=pair)
+    bt_engine.s_ema144_ema169(pair=pair, take_profit_ratio=1.01)
     # 产出
     bt_engine.create_trade_data_json(
         pair=pair, file_path=f"docs/trade_data_{pair}.json"

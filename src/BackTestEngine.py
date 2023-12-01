@@ -1,7 +1,7 @@
 import utils
 
 import pandas as pd
-import pandas_ta as ta
+from finta import TA
 import matplotlib.pyplot as plt
 from matplotlib import font_manager
 from decimal import Decimal
@@ -75,12 +75,35 @@ class BackTestEngine:
     def clear_trades(self):
         self.trades_df = self.trades_df_origin
 
+    # output
+    def create_trade_data_json(
+        self, pair, file_path="docs/trade_data.json", create_file=True
+    ):
+        json_str = self.trades_df.to_json(orient="records")
+        if create_file:
+            str = '{"' + pair[:-4] + '": ' + json_str + "}"
+            utils.write_file(file_path, str)
+        return json_str
+
+    def create_bar_chart(self):
+        symbol = self.trades_df.iloc[0, 1]
+        ax = self.trades_df.plot(x="created_at", y="profit_total", kind="bar")
+        ax.bar(self.trades_df["created_at"], self.trades_df["profit_total"], width=0.5)
+        font_path = "/System/Library/Fonts/Supplemental/Songti.ttc"
+        font_prop = font_manager.FontProperties(fname=font_path)
+        plt.rcParams["font.family"] = font_prop.get_name()
+        plt.title(f"{symbol} 收益表", fontproperties=font_prop)
+        plt.xlabel("时间", fontproperties=font_prop)
+        plt.ylabel("总收益", fontproperties=font_prop)
+        plt.xticks(rotation=60)
+        plt.subplots_adjust(bottom=0.3)  # 调整底部边距
+        plt.show()
+
     # Strategy
     def s_sma169(self, pair, take_profit_ratio=1.01):
         # 大于sma169买入，小于sma169或者到达止盈点卖出
         _df = self.data
-        # _df.ta.sma(169, append=True)
-        _df["sma169"] = ta.sma(_df["close"], 169)
+        _df["sma169"] = TA.SMA(_df, 169)
         _df["pre_price"] = _df["close"].shift(1)
         take_profit_price = 0
         # stop_loss_price = 0
@@ -105,26 +128,32 @@ class BackTestEngine:
                 vol = -1
                 self.execute_order(pair, datetime, vol, price, action)
 
-    # output
-    def create_trade_data_json(
-        self, pair, file_path="docs/trade_data.json", create_file=True
-    ):
-        json_str = self.trades_df.to_json(orient="records")
-        if create_file:
-            str = '{"' + pair[:-4] + '": ' + json_str + "}"
-            utils.write_file(file_path, str)
-        return json_str
+    def s_ema144_ema169(self, pair, take_profit_ratio=1.03):
+        _df = self.data
 
-    def create_bar_chart(self):
-        symbol = self.trades_df.iloc[0, 1]
-        ax = self.trades_df.plot(x="created_at", y="profit_total", kind="bar")
-        ax.bar(self.trades_df["created_at"], self.trades_df["profit_total"], width=0.5)
-        font_path = "/System/Library/Fonts/Supplemental/Songti.ttc"
-        font_prop = font_manager.FontProperties(fname=font_path)
-        plt.rcParams["font.family"] = font_prop.get_name()
-        plt.title(f"{symbol} 收益表", fontproperties=font_prop)
-        plt.xlabel("时间", fontproperties=font_prop)
-        plt.ylabel("总收益", fontproperties=font_prop)
-        plt.xticks(rotation=60)
-        plt.subplots_adjust(bottom=0.3)  # 调整底部边距
-        plt.show()
+        _df["ema144"] = TA.EMA(_df, 144)
+        _df["ema169"] = TA.EMA(_df, 169)
+        _df["pre_price"] = _df["close"].shift(15)  # 15min前
+        take_profit_price = 0
+        # stop_loss_price = 0
+
+        for i, row in _df.iterrows():
+            if i < 169 - 1:
+                continue
+            datetime = row["open_time"]  # TODO:是否使用close_time更准确？
+            price = float(row["close"])
+            pre_price = float(row["pre_price"])
+            ema144 = float(row["ema144"])
+            ema169 = float(row["ema169"])
+            if pre_price < ema144 and price > ema169 and self.positions == 0:
+                action = "long"
+                vol = 1
+                take_profit_price = price * take_profit_ratio
+                self.execute_order(pair, datetime, vol, price, action)
+            elif (
+                (pre_price < take_profit_price and price >= take_profit_price)
+                or (pre_price >= ema169 and price < ema144)
+            ) and self.positions > 0:
+                action = "close"
+                vol = -1
+                self.execute_order(pair, datetime, vol, price, action)

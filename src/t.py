@@ -1,7 +1,10 @@
 from Klines import Klines
 
+from finta import TA
+
 ck = Klines()
 
-df = ck.get_db_data(pair="BTCUSDT", interval="5h")
+df = ck.get_db_data(pair="BTCUSDT")
 
-print(df)
+
+# print(TA.EMA(df, 144))
